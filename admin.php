@@ -51,7 +51,7 @@ if ($action === 'getAdminData') {
     }
     $storesStmt->close();
 
-    // categories
+    // categories with accurate counts
     $categories = [];
     $categoryCounts = [];
     $catStmt = $mysqli->prepare("SELECT IFNULL(category,'Uncategorized') AS category, COUNT(*) as cnt FROM products GROUP BY category");
@@ -64,6 +64,35 @@ if ($action === 'getAdminData') {
     }
     $catStmt->close();
 
+    // NEW: Get additional analytics data
+    $totalRevenue = 0;
+    $avgProductsPerStore = 0;
+    $topStores = [];
+    
+    // Calculate total platform revenue
+    $revenueStmt = $mysqli->prepare("SELECT SUM(revenue) as total_revenue FROM stores");
+    if ($revenueStmt->execute()) {
+        $res = $revenueStmt->get_result();
+        $row = $res->fetch_assoc();
+        $totalRevenue = (float)$row['total_revenue'] ?? 0;
+    }
+    $revenueStmt->close();
+    
+    // Calculate average products per store
+    if ($totalStores > 0) {
+        $avgProductsPerStore = round($totalProducts / $totalStores, 1);
+    }
+    
+    // Get top 5 stores by revenue
+    $topStoresStmt = $mysqli->prepare("SELECT name, revenue FROM stores ORDER BY revenue DESC LIMIT 5");
+    if ($topStoresStmt->execute()) {
+        $res = $topStoresStmt->get_result();
+        while ($store = $res->fetch_assoc()) {
+            $topStores[] = $store;
+        }
+    }
+    $topStoresStmt->close();
+
     echo json_encode([
         'status'=>'success',
         'totalStores'=> $totalStores,
@@ -72,7 +101,12 @@ if ($action === 'getAdminData') {
         'users'=> $users,
         'stores'=> $stores,
         'categories'=> $categories,
-        'categoryCounts'=> $categoryCounts
+        'categoryCounts'=> $categoryCounts,
+        'analytics'=> [
+            'totalRevenue' => $totalRevenue,
+            'avgProductsPerStore' => $avgProductsPerStore,
+            'topStores' => $topStores
+        ]
     ]);
     exit;
 }

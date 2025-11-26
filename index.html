@@ -70,22 +70,30 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
                         </button>
+                        
                         <div id="dropdownMenu" class="dropdown-content glass-effect shadow-2xl">
-                            <a href="#" onclick="showAboutPage()" class="flex items-center space-x-3 hover:bg-red-50">
-                                <span>📋</span><span>About NearBuy</span>
+                        <a href="#" onclick="showAboutPage()" class="flex items-center space-x-3 hover:bg-red-50">
+                         <span>📋</span><span>About NearBuy</span>
+                         </a>
+                        <a href="#" onclick="showCustomerPage()" class="flex items-center space-x-3 hover:bg-red-50">
+                            <span>🛒</span><span>Find Products</span>
+                        </a>
+                         <a href="#" onclick="showUserLogin()" class="flex items-center space-x-3 hover:bg-red-50">
+                      <span>👤</span><span>Customer Login</span>
+                        </a>
+                     <a href="#" onclick="showUserRegister()" class="flex items-center space-x-3 hover:bg-red-50">
+                     <span>📝</span><span>Customer Sign Up</span>
+                         </a>
+                     <a href="#" onclick="showStoreOwnerLogin()" class="flex items-center space-x-3 hover:bg-red-50">
+                         <span>🏪</span><span>Store Owner Login</span>
+                         </a>
+                         <a href="#" onclick="showStoreRegister()" class="flex items-center space-x-3 hover:bg-red-50">
+                         <span>➕</span><span>Register Store</span>
+                         </a>
+                         <a href="#" onclick="showAdminLogin()" class="flex items-center space-x-3 hover:bg-red-50">
+                            <span>⚙️</span><span>Admin Panel</span>
                             </a>
-                            <a href="#" onclick="showCustomerPage()" class="flex items-center space-x-3 hover:bg-red-50">
-                                <span>🛒</span><span>Find Products</span>
-                            </a>
-                            <a href="#" onclick="showUserLogin()" class="flex items-center space-x-3 hover:bg-red-50">
-                                <span>👤</span><span>Customer Login</span>
-                            </a>
-                            <a href="#" onclick="showStoreOwnerLogin()" class="flex items-center space-x-3 hover:bg-red-50">
-                                <span>🏪</span><span>Store Owner</span>
-                            </a>
-                            <a href="#" onclick="showAdminLogin()" class="flex items-center space-x-3 hover:bg-red-50">
-                                <span>⚙️</span><span>Admin Panel</span>
-                            </a>
+</div>
                         </div>
                     </div>
                 </div>
@@ -305,6 +313,146 @@
                 </div>
             </div>
         </div>
+
+        <!-- User Registration Page -->
+<div id="userRegisterPage" class="hidden page-section py-16">
+    <div class="max-w-lg mx-auto professional-card rounded-2xl p-12">
+        <div class="text-center mb-10">
+            <div class="feature-icon mx-auto mb-6">👤</div>
+            <h2 class="text-4xl font-bold section-header mb-4">Create Account</h2>
+            <p class="text-professional text-lg">Join NearBuy and start smart shopping</p>
+        </div>
+        
+        <form onsubmit="registerUser(event)" class="space-y-6">
+            <div>
+                <label class="block text-gray-800 font-semibold mb-3 text-lg">Full Name</label>
+                <input type="text" id="registerUserName" required 
+                       class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                       placeholder="Enter your full name">
+            </div>
+            <div>
+                <label class="block text-gray-800 font-semibold mb-3 text-lg">Email</label>
+                <input type="email" id="registerUserEmail" required 
+                       class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                       placeholder="Enter your email">
+            </div>
+            <div>
+                <label class="block text-gray-800 font-semibold mb-3 text-lg">Password</label>
+                <input type="password" id="registerUserPassword" required 
+                       class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                       placeholder="Create password (min. 6 characters)">
+            </div>
+            <div>
+                <label class="block text-gray-800 font-semibold mb-3 text-lg">Confirm Password</label>
+                <input type="password" id="registerUserConfirmPassword" required 
+                       class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                       placeholder="Confirm your password">
+            </div>
+            <button type="submit" class="premium-button w-full px-8 py-4 text-white rounded-xl text-lg font-semibold mt-8">
+                Create Account
+            </button>
+        </form>
+        
+        <div class="mt-8 text-center">
+            <p class="text-gray-600">
+                Already have an account? 
+                <button onclick="showUserLogin()" class="text-red-600 hover:text-red-800 font-semibold ml-1">
+                    Sign In
+                </button>
+            </p>
+        </div>
+        
+        <div class="mt-8 p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+            <h4 class="font-bold text-green-800 mb-2 text-center">✨ Benefits of Joining</h4>
+            <ul class="text-green-700 text-sm space-y-1">
+                <li>• Save your favorite products</li>
+                <li>• Get personalized recommendations</li>
+                <li>• Track your search history</li>
+                <li>• Receive price drop alerts</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Store Registration Page -->
+<div id="storeRegisterPage" class="hidden page-section py-16">
+    <div class="max-w-2xl mx-auto professional-card rounded-2xl p-12">
+        <div class="text-center mb-10">
+            <div class="feature-icon mx-auto mb-6">🏪</div>
+            <h2 class="text-4xl font-bold section-header mb-4">Register Your Store</h2>
+            <p class="text-professional text-lg">Join NearBuy as a store owner and reach more customers</p>
+        </div>
+        
+        <form onsubmit="registerStore(event)" class="space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Store Name *</label>
+                    <input type="text" id="registerStoreName" required 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="Enter your store name">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Password *</label>
+                    <input type="password" id="registerStorePassword" required 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="Create password (min. 6 characters)">
+                </div>
+                <div>
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Confirm Password *</label>
+                    <input type="password" id="registerStoreConfirmPassword" required 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="Confirm your password">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Store Address *</label>
+                    <input type="text" id="registerStoreAddress" required 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="e.g., 123 Rizal Street, Barangay San Francisco">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Barangay/Location *</label>
+                    <input type="text" id="registerStoreLocation" required 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="e.g., Barangay San Francisco, Pagadian City">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-gray-800 font-semibold mb-3 text-lg">Operating Hours</label>
+                    <input type="text" id="registerStoreHours" 
+                           class="professional-input w-full px-6 py-4 rounded-xl text-lg"
+                           placeholder="e.g., 6:00 AM - 10:00 PM (optional)">
+                </div>
+            </div>
+            
+            <button type="submit" class="premium-button w-full px-8 py-4 text-white rounded-xl text-lg font-semibold mt-8">
+                Register Store
+            </button>
+        </form>
+        
+        <div class="mt-8 text-center">
+            <p class="text-gray-600">
+                Already have a store account? 
+                <button onclick="showStoreOwnerLogin()" class="text-red-600 hover:text-red-800 font-semibold ml-1">
+                    Store Login
+                </button>
+            </p>
+        </div>
+        
+        <div class="mt-8 p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+            <h4 class="font-bold text-blue-800 mb-2 text-center">🚀 Store Owner Benefits</h4>
+            <ul class="text-blue-700 text-sm space-y-1">
+                <li>• Reach local customers in your area</li>
+                <li>• Free store listing and product management</li>
+                <li>• Analytics and sales insights</li>
+                <li>• Increase store visibility</li>
+                <li>• Easy inventory management</li>
+            </ul>
+        </div>
+    </div>
+</div>
 
         <!-- Admin Dashboard -->
         <div id="adminDashboard" class="hidden page-section py-12">

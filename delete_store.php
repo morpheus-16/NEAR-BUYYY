@@ -1,5 +1,4 @@
 <?php
-
 header('Content-Type: application/json');
 session_start();
 require_once 'db.php';
@@ -22,12 +21,25 @@ if ($id <= 0) {
 }
 
 // Optionally fetch store name for logging / message
-$storeRes = $mysqli->query("SELECT name FROM stores WHERE id = $id LIMIT 1");
-$storeName = ($storeRes && $storeRes->num_rows) ? $storeRes->fetch_assoc()['name'] : '';
+$storeName = '';
+$storeRes = $mysqli->prepare("SELECT name FROM stores WHERE id = ? LIMIT 1");
+$storeRes->bind_param("i", $id);
+if ($storeRes->execute()) {
+    $result = $storeRes->get_result();
+    if ($result && $result->num_rows) {
+        $storeName = $result->fetch_assoc()['name'];
+    }
+}
+$storeRes->close();
 
-if ($mysqli->query("DELETE FROM stores WHERE id = $id")) {
-    // ON DELETE CASCADE will remove products and favorites linked
+// Use prepared statement to prevent SQL injection
+$stmt = $mysqli->prepare("DELETE FROM stores WHERE id = ?");
+$stmt->bind_param("i", $id);
+
+if ($stmt->execute()) {
     echo json_encode(['status'=>'success','message'=>"Store deleted", 'store'=>$storeName]);
 } else {
     echo json_encode(['status'=>'error','message'=>'DB error: '.$mysqli->error]);
 }
+$stmt->close();
+?>

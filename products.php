@@ -104,7 +104,119 @@ if ($action === 'searchProducts') {
     exit;
 }
 
-// ... rest of your existing product management code
+//missing favorites functions that are called from JavaScript
+if ($action === 'checkFavorite') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+        exit;
+    }
+    
+    $userId = (int)$_SESSION['user_id'];
+    $productId = toInt($input['productId'] ?? 0);
+    
+    $stmt = $mysqli->prepare("SELECT id FROM favorites WHERE user_id = ? AND product_id = ?");
+    $stmt->bind_param("ii", $userId, $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $isFavorite = $result && $result->num_rows > 0;
+    echo json_encode(['status' => 'success', 'isFavorite' => $isFavorite]);
+    exit;
+}
+
+if ($action === 'addFavorite') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+        exit;
+    }
+    
+    $userId = (int)$_SESSION['user_id'];
+    $productId = toInt($input['productId'] ?? 0);
+    
+    // Check if already favorited
+    $checkStmt = $mysqli->prepare("SELECT id FROM favorites WHERE user_id = ? AND product_id = ?");
+    $checkStmt->bind_param("ii", $userId, $productId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    
+    if ($checkResult && $checkResult->num_rows > 0) {
+        echo json_encode(['status' => 'success', 'message' => 'Already in favorites']);
+        exit;
+    }
+    
+    $stmt = $mysqli->prepare("INSERT INTO favorites (user_id, product_id) VALUES (?, ?)");
+    $stmt->bind_param("ii", $userId, $productId);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Added to favorites']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to add favorite']);
+    }
+    exit;
+}
+
+if ($action === 'removeFavorite') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+        exit;
+    }
+    
+    $userId = (int)$_SESSION['user_id'];
+    $productId = toInt($input['productId'] ?? 0);
+    
+    $stmt = $mysqli->prepare("DELETE FROM favorites WHERE user_id = ? AND product_id = ?");
+    $stmt->bind_param("ii", $userId, $productId);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Removed from favorites']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to remove favorite']);
+    }
+    exit;
+}
+
+if ($action === 'getFavorites') {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+        exit;
+    }
+    
+    $userId = (int)$_SESSION['user_id'];
+    
+    $sql = "SELECT p.*, s.name AS store, s.address, s.hours, s.latitude, s.longitude 
+            FROM favorites f 
+            JOIN products p ON f.product_id = p.id 
+            JOIN stores s ON p.store_id = s.id 
+            WHERE f.user_id = ? 
+            ORDER BY p.name ASC";
+    
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $favorites = [];
+    while ($row = $result->fetch_assoc()) {
+        $favorites[] = [
+            'id' => (int)$row['id'],
+            'name' => $row['name'],
+            'sku' => $row['sku'],
+            'price' => (float)$row['price'],
+            'category' => $row['category'],
+            'stock' => (int)$row['stock'],
+            'supplier' => $row['supplier'],
+            'store' => $row['store'],
+            'address' => $row['address'],
+            'hours' => $row['hours'],
+            'latitude' => isset($row['latitude']) ? floatval($row['latitude']) : null,
+            'longitude' => isset($row['longitude']) ? floatval($row['longitude']) : null
+        ];
+    }
+    
+    echo json_encode($favorites);
+    exit;
+}
+
 /* Product management for store owners (requires session store_id) */
 if ($action === 'addProduct') {
     if (!isset($_SESSION['store_id'])) { echo json_encode(['status'=>'error','message'=>'Not logged in as store.']); exit; }
@@ -189,3 +301,4 @@ if ($action === 'deleteProduct') {
 }
 
 echo json_encode(['status'=>'error','message'=>'Unsupported action.']);
+?>

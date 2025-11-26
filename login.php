@@ -20,7 +20,7 @@ function verify_password($provided, $stored) {
     if (strpos($stored, '$2y$') === 0 || strpos($stored, '$2a$') === 0 || strpos($stored, '$argon2') === 0) {
         return password_verify($provided, $stored);
     }
-    return hash_equals($stored, $provided);
+    return $stored === $provided; // Fixed: Use === for exact comparison instead of hash_equals for plain text
 }
 
 // -------------------- USER LOGIN --------------------
@@ -33,6 +33,10 @@ if ($action === 'userLogin') {
     }
 
     $stmt = $mysqli->prepare("SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1");
+    if (!$stmt) {
+        send(['status'=>'error','message'=>'Database preparation error.']);
+    }
+    
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -40,6 +44,9 @@ if ($action === 'userLogin') {
     if ($res && $res->num_rows) {
         $u = $res->fetch_assoc();
         if (verify_password($password, $u['password'])) {
+            // Regenerate session ID for security
+            session_regenerate_id(true);
+            
             $_SESSION['user_id'] = (int)$u['id'];
             $_SESSION['user_name'] = $u['name'];
             $_SESSION['user_email'] = $u['email'];
@@ -65,6 +72,10 @@ if ($action === 'storeLogin') {
 
     // Case-insensitive search
     $stmt = $mysqli->prepare("SELECT * FROM stores WHERE LOWER(name) = LOWER(?) LIMIT 1");
+    if (!$stmt) {
+        send(['status'=>'error','message'=>'Database preparation error.']);
+    }
+    
     $stmt->bind_param('s', $storeName);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -72,6 +83,9 @@ if ($action === 'storeLogin') {
     if ($res && $res->num_rows) {
         $s = $res->fetch_assoc();
         if (verify_password($password, $s['password'])) {
+            // Regenerate session ID for security
+            session_regenerate_id(true);
+            
             // Set session for store
             $_SESSION['store_id'] = (int)$s['id'];
             $_SESSION['store_name'] = $s['name'];
@@ -109,6 +123,10 @@ if ($action === 'adminLogin') {
     }
 
     $stmt = $mysqli->prepare("SELECT id, username, password, role FROM admins WHERE username = ? LIMIT 1");
+    if (!$stmt) {
+        send(['status'=>'error','message'=>'Database preparation error.']);
+    }
+    
     $stmt->bind_param('s', $username);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -116,6 +134,9 @@ if ($action === 'adminLogin') {
     if ($res && $res->num_rows) {
         $a = $res->fetch_assoc();
         if (verify_password($password, $a['password'])) {
+            // Regenerate session ID for security
+            session_regenerate_id(true);
+            
             $_SESSION['admin_id'] = (int)$a['id'];
             $_SESSION['admin_username'] = $a['username'];
             $_SESSION['admin_role'] = $a['role'] ?? 'admin';
@@ -132,3 +153,4 @@ if ($action === 'adminLogin') {
 
 // -------------------- UNSUPPORTED ACTION --------------------
 send(['status'=>'error','message'=>'Unsupported action.']);
+?>

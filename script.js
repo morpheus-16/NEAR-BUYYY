@@ -174,7 +174,7 @@ function initializeMap() {
         console.warn('Map container (#map) not found');
         return;
     }
-    map = L.map('map').setView([8.8308, 123.4350], 13); // default center
+    map = L.map('map').setView([7.8308, 123.4350], 13); // default center for Pagadian City
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
@@ -191,24 +191,22 @@ function openMapModal(lat, lng, storeDetails) {
         }
     }
 
-    // Use storeDetails.latitude and storeDetails.longitude if available
-    let finalLat = Number(storeDetails?.latitude);
-    let finalLng = Number(storeDetails?.longitude);
+    // FIXED: Better coordinate validation
+    let finalLat = Number(storeDetails?.latitude || lat);
+    let finalLng = Number(storeDetails?.longitude || lng);
 
-    // If coordinates are invalid, fall back to provided lat/lng or default
-    if (!isFinite(finalLat) || !isFinite(finalLng) || finalLat === 0 || finalLng === 0) {
-        finalLat = Number(lat);
-        finalLng = Number(lng);
-        if (!isFinite(finalLat) || !isFinite(finalLng) || finalLat === 0 || finalLng === 0) {
-            console.warn('Invalid coordinates, using default location');
-            finalLat = 8.8308; // Default latitude
-            finalLng = 123.4350; // Default longitude
-            storeDetails = storeDetails || {};
-            storeDetails.name = storeDetails.name || 'Unknown Store';
-            storeDetails.address = storeDetails.address || 'No address available';
-            storeDetails.hours = storeDetails.hours || 'No hours available';
-        }
+    // Validate coordinates - use default if invalid
+    if (!isFinite(finalLat) || !isFinite(finalLng) || Math.abs(finalLat) > 90 || Math.abs(finalLng) > 180) {
+        console.warn('Invalid coordinates, using default location');
+        finalLat = 7.8308; // Default latitude for Pagadian City
+        finalLng = 123.4350; // Default longitude for Pagadian City
     }
+
+    // Ensure store details has basic info
+    storeDetails = storeDetails || {};
+    storeDetails.name = storeDetails.name || 'Unknown Store';
+    storeDetails.address = storeDetails.address || 'No address available';
+    storeDetails.hours = storeDetails.hours || 'No hours available';
 
     // Show map modal
     document.getElementById('mapModal').classList.remove('hidden');
@@ -229,7 +227,7 @@ function openMapModal(lat, lng, storeDetails) {
         console.log("🗺️ Mapping coordinates:", finalLat, finalLng, storeDetails);
 
         // Set map view and add marker
-        map.setView([finalLat, finalLng], 13);
+        map.setView([finalLat, finalLng], 15); // Increased zoom level for better visibility
 
         if (window.currentMarker) {
             map.removeLayer(window.currentMarker);
@@ -318,7 +316,7 @@ function clearDirections() {
 
 /* ---------- Navigation / UI helpers ---------- */
 function hideAllPages() {
-    const pages = ['homePage', 'userLoginPage', 'adminLoginPage', 'customerPage', 'storeOwnerDashboard', 'adminDashboard', 'aboutPage', 'userProfileModal', 'mapModal'];
+    const pages = ['homePage', 'userLoginPage', 'adminLoginPage', 'customerPage', 'storeOwnerDashboard', 'adminDashboard', 'aboutPage', 'userProfileModal', 'mapModal', 'storeOwnerLogin'];
     pages.forEach(page => {
         const el = document.getElementById(page);
         if (el) el.classList.add('hidden');
@@ -329,43 +327,55 @@ function showHomePage() {
     hideAllPages();
     const el = document.getElementById('homePage');
     if (el) el.classList.remove('hidden');
-    const ups = document.getElementById('userProfileSection');
-    if (ups) ups.classList.add('hidden');
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
 }
 
 function showCustomerPage() {
     hideAllPages();
     document.getElementById('customerPage').classList.remove('hidden');
-    document.getElementById('userProfileSection').classList.toggle('hidden', !currentUser);
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
 }
 
 function showUserLogin() {
     hideAllPages();
     document.getElementById('userLoginPage').classList.remove('hidden');
-    document.getElementById('userProfileSection').classList.add('hidden');
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
 }
 
 function showStoreOwnerLogin() {
     hideAllPages();
     document.getElementById('storeOwnerLogin').classList.remove('hidden');
-    document.getElementById('userProfileSection').classList.add('hidden');
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
 }
 
 function showAdminLogin() {
     hideAllPages();
     document.getElementById('adminLoginPage').classList.remove('hidden');
-    document.getElementById('userProfileSection').classList.add('hidden');
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
 }
 
 function showAboutPage() {
     hideAllPages();
     document.getElementById('aboutPage').classList.remove('hidden');
-    closeDropdownMenu(); // Close dropdown when navigating
+    updateUserProfileVisibility();
+    closeDropdownMenu();
+}
+
+/* ---------- User Profile Visibility Management ---------- */
+function updateUserProfileVisibility() {
+    const userProfileSection = document.getElementById('userProfileSection');
+    if (userProfileSection) {
+        if (currentUser) {
+            userProfileSection.classList.remove('hidden');
+        } else {
+            userProfileSection.classList.add('hidden');
+        }
+    }
 }
 
 /* ---------- Escaping helper ---------- */
@@ -690,19 +700,88 @@ async function showFavorites() {
     }
 }
 
-/* ---------- User / Store / Admin login using backend ---------- */
+/* ---------- User Profile Functions ---------- */
+async function showUserProfile() {
+    if (!currentUser) {
+        alert('Please login to view profile');
+        showUserLogin();
+        return;
+    }
+    
+    const modal = document.getElementById('userProfileModal');
+    const content = document.getElementById('userProfileContent');
+    
+    // Get user favorites count
+    const favoritesResp = await apiPost('products.php', { action: 'getFavorites' });
+    const favoritesCount = Array.isArray(favoritesResp) ? favoritesResp.length : 0;
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                <h4 class="text-xl font-bold text-blue-800 mb-4">👤 User Information</h4>
+                <div class="space-y-3">
+                    <p><strong>Name:</strong> ${escapeHtml(currentUser.name)}</p>
+                    <p><strong>Email:</strong> ${escapeHtml(currentUser.email)}</p>
+                    <p><strong>User ID:</strong> ${currentUser.id}</p>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                <h4 class="text-xl font-bold text-green-800 mb-4">❤️ Favorites</h4>
+                <p class="text-lg"><strong>Total Favorites:</strong> ${favoritesCount}</p>
+                <button onclick="showFavorites()" class="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    View My Favorites
+                </button>
+            </div>
+            
+            <div class="bg-gradient-to-r from-red-50 to-red-100 p-6 rounded-xl border border-red-200">
+                <h4 class="text-xl font-bold text-red-800 mb-4">⚙️ Account Actions</h4>
+                <div class="space-y-3">
+                    <button onclick="logoutUser()" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeUserProfile() {
+    document.getElementById('userProfileModal').classList.add('hidden');
+}
+
+/* ---------- Enhanced Login Functions ---------- */
 async function loginUser(event) {
     event?.preventDefault();
-    const email = document.getElementById('userEmail').value;
+    const email = document.getElementById('userEmail').value.trim();
     const password = document.getElementById('userPassword').value;
-    const resp = await apiPost('login.php', { action: 'userLogin', email, password });
-    if (resp && resp.status === 'success' && resp.user) {
-        currentUser = resp.user;
-        document.getElementById('userProfileSection').classList.remove('hidden');
-        showCustomerPage();
-        alert(`Welcome, ${currentUser.name}!`);
-    } else {
-        alert(resp.message || 'Invalid email or password');
+
+    if (!email || !password) {
+        alert('Please enter both email and password');
+        return;
+    }
+
+    try {
+        const resp = await apiPost('login.php', { action: 'userLogin', email, password });
+        console.log('User login response:', resp);
+        
+        if (resp && resp.status === 'success' && resp.user) {
+            currentUser = resp.user;
+            updateUserProfileVisibility();
+            showCustomerPage();
+            alert(`Welcome back, ${currentUser.name}!`);
+            
+            // Clear login form
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userPassword').value = '';
+        } else {
+            alert(resp.message || 'Invalid email or password. Please try again.');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Network error. Please check your connection and try again.');
     }
 }
 
@@ -711,56 +790,126 @@ async function loginStoreOwner(event) {
     const storeName = document.getElementById('storeName').value.trim();
     const password = document.getElementById('storePassword').value;
 
-    const resp = await apiPost('login.php', { action: 'storeLogin', storeName, password });
-    console.log('STORE LOGIN RESPONSE:', resp);
+    if (!storeName || !password) {
+        alert('Please enter both store name and password');
+        return;
+    }
 
-    if (resp?.status === 'success' && resp.store) {
-        currentStore = resp.store;
-        // Await the dashboard initialization to ensure data loads
-        await showStoreOwnerDashboard();
-        alert(`✅ Welcome to ${currentStore.name} Dashboard!`);
-    } else {
-        alert(resp?.message || 'Invalid store name or password');
+    try {
+        const resp = await apiPost('login.php', { action: 'storeLogin', storeName, password });
+        console.log('Store login response:', resp);
+
+        if (resp?.status === 'success' && resp.store) {
+            currentStore = resp.store;
+            await showStoreOwnerDashboard();
+            alert(`✅ Welcome to ${currentStore.name} Dashboard!`);
+            
+            // Clear login form
+            document.getElementById('storeName').value = '';
+            document.getElementById('storePassword').value = '';
+        } else {
+            alert(resp?.message || 'Invalid store name or password. Please try again.');
+        }
+    } catch (error) {
+        console.error('Store login error:', error);
+        alert('Network error. Please check your connection and try again.');
     }
 }
 
 async function loginAdmin(event) {
     event?.preventDefault();
-    const username = document.getElementById('adminUsername').value;
+    const username = document.getElementById('adminUsername').value.trim();
     const password = document.getElementById('adminPassword').value;
-    const resp = await apiPost('login.php', { action: 'adminLogin', username, password });
-    if (resp && resp.status === 'success' && resp.admin) {
-        currentAdmin = resp.admin;
-        showAdminDashboard();
-        alert(`Welcome, ${currentAdmin.role}!`);
-    } else {
-        alert(resp.message || 'Invalid admin username or password');
+
+    if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+    }
+
+    try {
+        const resp = await apiPost('login.php', { action: 'adminLogin', username, password });
+        console.log('Admin login response:', resp);
+        
+        if (resp && resp.status === 'success' && resp.admin) {
+            currentAdmin = resp.admin;
+            showAdminDashboard();
+            alert(`Welcome, ${currentAdmin.role}!`);
+            
+            // Clear login form
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+        } else {
+            alert(resp.message || 'Invalid admin username or password. Please try again.');
+        }
+    } catch (error) {
+        console.error('Admin login error:', error);
+        alert('Network error. Please check your connection and try again.');
     }
 }
 
+/* ---------- Enhanced Logout Functions ---------- */
 async function logoutUser() {
-    await apiPost('logout.php', {});
-    currentUser = null;
-    document.getElementById('userProfileModal')?.classList.add('hidden');
-    document.getElementById('userProfileSection')?.classList.add('hidden');
-    showHomePage();
-    alert('Logged out successfully');
+    try {
+        const resp = await apiPost('logout.php', {});
+        if (resp && resp.status === 'success') {
+            currentUser = null;
+            document.getElementById('userProfileModal').classList.add('hidden');
+            updateUserProfileVisibility();
+            showHomePage();
+            alert('Logged out successfully!');
+        } else {
+            alert('Logout failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if server fails
+        currentUser = null;
+        document.getElementById('userProfileModal').classList.add('hidden');
+        updateUserProfileVisibility();
+        showHomePage();
+        alert('Logged out successfully!');
+    }
 }
 
 async function logoutStoreOwner() {
-    await apiPost('logout.php', {});
-    currentStore = null;
-    showHomePage();
-    alert('Logged out successfully');
+    try {
+        const resp = await apiPost('logout.php', {});
+        if (resp && resp.status === 'success') {
+            currentStore = null;
+            showHomePage();
+            alert('Logged out successfully!');
+        } else {
+            alert('Logout failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Store logout error:', error);
+        // Force logout even if server fails
+        currentStore = null;
+        showHomePage();
+        alert('Logged out successfully!');
+    }
 }
 
 async function logoutAdmin() {
-    await apiPost('logout.php', {});
-    currentAdmin = null;
-    showHomePage();
-    alert('Logged out successfully');
+    try {
+        const resp = await apiPost('logout.php', {});
+        if (resp && resp.status === 'success') {
+            currentAdmin = null;
+            showHomePage();
+            alert('Logged out successfully!');
+        } else {
+            alert('Logout failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Admin logout error:', error);
+        // Force logout even if server fails
+        currentAdmin = null;
+        showHomePage();
+        alert('Logged out successfully!');
+    }
 }
 
+/* ---------- Store Owner Dashboard Functions ---------- */
 async function showStoreOwnerDashboard() {
     hideAllPages();
     document.getElementById('storeOwnerDashboard').classList.remove('hidden');
@@ -1094,25 +1243,6 @@ window.adminDeleteStore = async function (storeId, storeName) {
     }
 }
 
-function closeUserProfile() {
-    document.getElementById('userProfileModal').classList.add('hidden');
-}
-
-function closeMapModal() {
-    const modal = document.getElementById('mapModal');
-    if (modal) modal.classList.add('hidden');
-
-    // Optional: remove marker when modal is closed
-    if (window.currentMarker && map) {
-        map.removeLayer(window.currentMarker);
-        window.currentMarker = null;
-    }
-
-    storeLat = null;
-    storeLng = null;
-    clearDirections();
-}
-
 function setFilter(filter) {
     currentFilter = filter;
     // Update active state of filter chips
@@ -1221,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.user) {
                 currentUser = data.user;
-                document.getElementById('userProfileSection').classList.remove('hidden');
+                updateUserProfileVisibility();
             } else if (data.store) {
                 currentStore = data.store;
             } else if (data.admin) {
@@ -1250,7 +1380,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
- const radiusFilter = document.getElementById('radiusFilter');
+    // FIXED: Add click handler for user profile button
+    const userProfileButton = document.querySelector('#userProfileSection button');
+    if (userProfileButton) {
+        userProfileButton.addEventListener('click', showUserProfile);
+    }
+
+    const radiusFilter = document.getElementById('radiusFilter');
     const radiusDistance = document.getElementById('radiusDistance');
     
     if (radiusFilter) {
@@ -1280,6 +1416,4 @@ document.addEventListener('DOMContentLoaded', () => {
             searchProducts();
         }
     });
-
-    
 });

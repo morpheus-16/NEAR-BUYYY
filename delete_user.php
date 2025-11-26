@@ -20,8 +20,14 @@ if ($id <= 0) {
     exit;
 }
 
-if ($mysqli->query("DELETE FROM users WHERE id = $id")) {
+// Use prepared statement to prevent SQL injection
+$stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
+$stmt->bind_param("i", $id);
+
+if ($stmt->execute()) {
     echo json_encode(['status'=>'success','message'=>'User deleted']);
 } else {
     echo json_encode(['status'=>'error','message'=>'DB error: '.$mysqli->error]);
 }
+$stmt->close();
+?>

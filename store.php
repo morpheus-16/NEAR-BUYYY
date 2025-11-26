@@ -64,66 +64,36 @@ if ($action === 'updateStoreSettings') {
     $address = $settings['address'] ?? '';
     $location = $settings['location'] ?? '';
     $hours = $settings['hours'] ?? null;
-    $latitude = isset($settings['latitude']) && is_numeric($settings['latitude']) ? floatval($settings['latitude']) : null;
-    $longitude = isset($settings['longitude']) && is_numeric($settings['longitude']) ? floatval($settings['longitude']) : null;
+    $latitude = isset($settings['latitude']) && $settings['latitude'] !== '' ? floatval($settings['latitude']) : null;
+    $longitude = isset($settings['longitude']) && $settings['longitude'] !== '' ? floatval($settings['longitude']) : null;
 
-    // Use prepared statement with NULL handling
+    // FIXED: Simplified NULL handling using prepared statements properly
     $sql = "UPDATE stores SET address = ?, location = ?, hours = ?, latitude = ?, longitude = ? WHERE id = ?";
     $stmt = $mysqli->prepare($sql);
+    
     if ($stmt === false) {
         echo json_encode(['status'=>'error','message'=>'DB prepare error: '.$mysqli->error]);
         exit;
     }
-    // bind params: strings and doubles/nulls
-    // When binding null to double, pass null as NULL and 'd' will accept NULL if using bind_param requires variables:
-    $stmt->bind_param(
-        'sssddi',
-        $address,
-        $location,
-        $hours,
-        $latitude,
-        $longitude,
+    
+    // Bind parameters - use correct types and handle NULL values properly
+    $stmt->bind_param('sssddi', 
+        $address, 
+        $location, 
+        $hours, 
+        $latitude, 
+        $longitude, 
         $store_id
     );
 
-    // If latitude/longitude are null, convert to NULL (this will cast to 0 in bind, so handle by using query fallback)
-    // To robustly support NULLs, use an alternate query path:
-    if ($latitude === null || $longitude === null) {
-        // build with proper NULL text
-        $latPart = ($latitude === null) ? "NULL" : $mysqli->real_escape_string($latitude);
-        $lngPart = ($longitude === null) ? "NULL" : $mysqli->real_escape_string($longitude);
-        $sql2 = "UPDATE stores SET address = ?, location = ?, hours = ?, latitude = $latPart, longitude = $lngPart WHERE id = ?";
-        $stmt2 = $mysqli->prepare($sql2);
-        if ($stmt2 === false) {
-            echo json_encode(['status'=>'error','message'=>'DB prepare error: '.$mysqli->error]);
-            exit;
-        }
-        $stmt2->bind_param('sssi', $address, $location, $hours, $store_id);
-        if ($stmt2->execute()) {
-            echo json_encode(['status'=>'success','message'=>'Store settings updated.']);
-        } else {
-            echo json_encode(['status'=>'error','message'=>'DB error: '.$mysqli->error]);
-        }
-        $stmt2->close();
-        exit;
+    if ($stmt->execute()) {
+        echo json_encode(['status'=>'success','message'=>'Store settings updated.']);
     } else {
-        // both latitude and longitude provided
-        // re-prepare correct types: s s s d d i
-        $stmt->close();
-        $stmt3 = $mysqli->prepare("UPDATE stores SET address = ?, location = ?, hours = ?, latitude = ?, longitude = ? WHERE id = ?");
-        if ($stmt3 === false) {
-            echo json_encode(['status'=>'error','message'=>'DB prepare error: '.$mysqli->error]);
-            exit;
-        }
-        $stmt3->bind_param('sssddi', $address, $location, $hours, $latitude, $longitude, $store_id);
-        if ($stmt3->execute()) {
-            echo json_encode(['status'=>'success','message'=>'Store settings updated.']);
-        } else {
-            echo json_encode(['status'=>'error','message'=>'DB error: '.$mysqli->error]);
-        }
-        $stmt3->close();
-        exit;
+        echo json_encode(['status'=>'error','message'=>'DB error: '.$mysqli->error]);
     }
+    $stmt->close();
+    exit;
 }
 
 echo json_encode(['status'=>'error','message'=>'Unsupported action.']);
+?>

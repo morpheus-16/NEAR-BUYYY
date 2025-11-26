@@ -251,6 +251,24 @@ function openMapModal(lat, lng, storeDetails) {
     }, 150);
 }
 
+function closeMapModal() {
+    console.log("Closing map modal...");
+    
+    const mapModal = document.getElementById('mapModal');
+    mapModal.classList.add('hidden');
+    
+    // Restore body scrolling
+    document.body.style.overflow = '';
+
+    // Clean up map resources
+    if (routingControl) {
+        if (map) {
+            map.removeControl(routingControl);
+        }
+        routingControl = null;
+    }
+}
+
 /* ---------- Directions ---------- */
 function getDirections() {
     if (!navigator.geolocation) {

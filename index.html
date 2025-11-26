@@ -873,30 +873,38 @@
     </div>
 
     <!-- Map Modal -->
-    <div id="mapModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">📍 Store Location</h3>
-                <button onclick="closeMapModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            
-            <div id="storeDetails" class="space-y-3 mb-6"></div>
-            <div id="map" class="h-64 mb-4"></div>
-            <div id="directions" class="space-y-2 mb-4 text-sm text-gray-700"></div>
-            
-            <div class="mt-6 text-center space-x-3">
-                <button id="getDirectionsBtn" onclick="getDirections()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    🧭 Get Directions
-                </button>
-                <button id="clearDirectionsBtn" onclick="clearDirections()" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 hidden">
-                    🗑️ Clear Route
-                </button>
-                <button onclick="closeMapModal()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                    Close
-                </button>
-            </div>
+<div id="mapModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" onclick="closeMapModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto relative z-10">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">📍 Store Location</h3>
+            <button onclick="closeMapModal()" class="text-gray-500 hover:text-gray-700 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200">
+                &times;
+            </button>
+        </div>
+        
+        <div id="storeDetails" class="space-y-3 mb-6 p-4 bg-gray-50 rounded-lg"></div>
+        
+        <div id="map" class="h-64 mb-4 rounded-xl border-2 border-gray-200"></div>
+        
+        <div id="directions" class="space-y-2 mb-4 text-sm text-gray-700 bg-blue-50 p-3 rounded-lg"></div>
+        
+        <div class="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <button id="getDirectionsBtn" onclick="getDirections()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-semibold">
+                🧭 Get Directions
+            </button>
+            <button id="clearDirectionsBtn" onclick="clearDirections()" class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all font-semibold hidden">
+                🗑️ Clear Route
+            </button>
+            <button onclick="closeMapModal()" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all font-semibold">
+                Close
+            </button>
         </div>
     </div>
+</div>
 
     <script src="script.js?v=2"></script>
 

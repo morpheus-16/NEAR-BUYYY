@@ -5,7 +5,7 @@
 $DB_HOST = 'localhost';
 $DB_USER = 'root';      // change if needed
 $DB_PASS = '';          // change to your password
-$DB_NAME = 'app_db';
+$DB_NAME = 'nearbuy';
 
 $mysqli = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
 
